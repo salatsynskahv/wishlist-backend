@@ -12,7 +12,7 @@ const User = require("./src/model/user");
 app.use(express.json())
 app.use(cors({}))
 
-const port = 3001;
+const port = process.env.PORT || 3001;
 const uri = process.env.MONGODB_CONNECTION_STRING;
 
 mongoose.connect(uri, {
