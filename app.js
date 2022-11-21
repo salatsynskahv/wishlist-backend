@@ -2,13 +2,13 @@ const express = require("express");
 const mongoose = require("mongoose");
 const passport = require('passport');
 const cookieSession = require('cookie-session');
-const Wishlist = require("./model/wishlist")
+const Wishlist = require("./src/model/wishlist")
 require("dotenv").config();
-require('./passport-setup')
+require('./src/passport-setup')
 
 const app = express();
 const cors = require('cors');
-const User = require("./model/user");
+const User = require("./src/model/user");
 app.use(express.json())
 app.use(cors({}))
 
@@ -138,12 +138,14 @@ app.get("/wishlist", async (request, response) => {
 //     })
 // })
 
-app.get("/wishlists/:userEmail", async (request, response) => {
+app.get("/wishlists/:userEmail", (request, response) => {
     console.log('/wishlists/:userEmail request.params.id: ' + request.params.userEmail)
-    await Wishlist.find({user: request.params.userEmail}, (err, result) => {
+    Wishlist.find({user: request.params.userEmail}, (err, result) => {
         console.log("get request in")
         response.send(result)
         console.log("result " + result)
+    }).clone().catch(function (err) {
+        console.log(err)
     })
 })
 
@@ -169,6 +171,32 @@ app.post("/wishlist", async (req, res) => {
         console.log("error", err)
     }
 
+})
+
+app.put("/wishlist", async (req, res) => {
+    try {
+        console.log("put wishlist: " + JSON.stringify(req.body));
+        const filter = { _id: req.body._id}
+        Wishlist.modifyWishlistSchema(req.body.fields)
+        const doc = await Wishlist.findOneAndUpdate(filter, { content: req.body.content }, { new: true });
+        console.log("found: " + JSON.stringify(doc));
+        res.send({message: `wishlist  updated`})
+        console.log("after put wishlist: " + JSON.stringify(doc));
+    } catch (err) {
+        console.log("error", err)
+        res.error();
+    }
+})
+
+app.get('/user/:email', async (request, response) =>
+{
+    try{
+        const user = await User.findOne({email: request.params.email});
+        console.log(`found user: ${JSON.stringify(user)}`);
+        response.send(user)
+    }catch (e){
+        console.log(e)
+    }
 })
 
 app.post("/user", async (request, response) => {
