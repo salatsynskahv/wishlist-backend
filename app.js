@@ -129,14 +129,14 @@ app.get("/wishlist", async (request, response) => {
         // console.log("result " + result.data)
     })
 })
-// app.get("/wishlist/:id", async (request, response) => {
-//     console.log('request.params.id: ' + request.params.id)
-//     await Wishlist.findById(request.params.id, (err, result) => {
-//         console.log("get request in")
-//         response.send(result)
-//         console.log("result " + result)
-//     })
-// })
+app.get("/wishlist/:id", async (request, response) => {
+    console.log('request.params.id: ' + request.params.id)
+    await Wishlist.findOne({_id: new mongoose.Types.ObjectId(request.params.id)}, (err, result) => {
+        console.log("get request in")
+        response.send(result)
+        console.log("result " + result)
+    }).clone()
+})
 
 app.get("/wishlists/:userEmail", (request, response) => {
     console.log('/wishlists/:userEmail request.params.id: ' + request.params.userEmail)
@@ -174,27 +174,35 @@ app.post("/wishlist", async (req, res) => {
 })
 
 app.put("/wishlist", async (req, res) => {
-    try {
-        console.log("put wishlist: " + JSON.stringify(req.body));
-        const filter = { _id: req.body._id}
-        Wishlist.modifyWishlistSchema(req.body.fields)
-        const doc = await Wishlist.findOneAndUpdate(filter, { content: req.body.content }, { new: true });
-        console.log("found: " + JSON.stringify(doc));
-        res.send({message: `wishlist  updated`})
-        console.log("after put wishlist: " + JSON.stringify(doc));
-    } catch (err) {
-        console.log("error", err)
-        res.error();
-    }
+    console.log("put wishlist: " + JSON.stringify(req.body));
+    const filter = {_id: req.body._id}
+    Wishlist.modifyWishlistSchema(req.body.fields)
+    Wishlist.findOneAndUpdate(filter,
+        {
+            fields: req.body.fields,
+            content: req.body.content
+        },
+        {new: true}
+    )
+        .then(
+            result => {
+                console.log("found: " + JSON.stringify(result));
+                res.send({message: `wishlist  updated`})
+                console.log("after put wishlist: " + JSON.stringify(result));
+            }
+        )
+        .catch(
+            err => {
+                console.log(err);
+            }
+        )
 })
-
-app.get('/user/:email', async (request, response) =>
-{
-    try{
+app.get('/user/:email', async (request, response) => {
+    try {
         const user = await User.findOne({email: request.params.email});
         console.log(`found user: ${JSON.stringify(user)}`);
         response.send(user)
-    }catch (e){
+    } catch (e) {
         console.log(e)
     }
 })
@@ -212,15 +220,16 @@ app.patch('/user', async (request, response) => {
     try {
         console.log("req:body", request.body);
         const updateItem = request.body;
-        User.findOne({email: updateItem.email}).then(
+        User.findOne({email: updateItem.currentUserEmail}).then(
             doc => {
                 if (doc['friend_ids']) {
-                    doc['friend_ids'].push(updateItem.friend)
+                    doc['friend_ids'].push(updateItem.newFriend.email)
                 } else {
-                    doc['friend_ids'] = [updateItem.friend]
+                    doc['friend_ids'] = [updateItem.newFriend.email]
                 }
                 console.log("doc: " + JSON.stringify(doc));
-                doc.save()
+                doc.save();
+                response.send({addedFriend: updateItem.newFriend.email});
             },
             err => {
                 console.log(err)
@@ -230,7 +239,7 @@ app.patch('/user', async (request, response) => {
         console.log("err", err)
     }
 })
-
+//:todo return list of wishlists of each friend
 app.get("/friends", async (req, res) => {
     try {
         const searchValue = req.query.email;
