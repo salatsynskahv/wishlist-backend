@@ -255,6 +255,10 @@ app.get("/friends", async (req, res) => {
     }
 })
 
+app.get('/*', (req, res) => {
+    res.render('pages/index')
+})
+
 app.listen(port, () => {
     console.log(`App listening at localhost:${port}`);
 });
