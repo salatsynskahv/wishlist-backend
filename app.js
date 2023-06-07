@@ -122,8 +122,8 @@ app.get('/logout', function (req, res) {
     res.redirect('/');
 });
 
-app.get("/wishlist", async (request, response) => {
-    await Wishlist.find({}, (err, result) => {
+app.get("/wishlists", async (request, response) => {
+    await Wishlist.find({}).then (( result) => {
         // console.log("get request in")
         response.send(result)
         // console.log("result " + result.data)
@@ -165,8 +165,9 @@ app.post("/wishlist", async (req, res) => {
         const newWishlist = req.body
         // newWishlist._id = new mongoose.Types.ObjectId()
         Wishlist.modifyWishlistSchema(req.body.fields)
-        await Wishlist.create(newWishlist)
-        res.send({_id: newWishlist._id})
+        const createdList = await Wishlist.create(newWishlist);
+        console.log("createdList: " + createdList);
+        res.send(createdList)
     } catch (err) {
         console.log("error", err)
     }
@@ -255,9 +256,23 @@ app.get("/friends", async (req, res) => {
     }
 })
 
-app.get('/*', (req, res) => {
-    res.render('pages/index')
-})
+app.patch("/deleteFriend", async (request, response) => {
+    console.log("req:body", request.body);
+    const { userEmail, deleteFriendEmail} = request.body;
+    console.log(deleteFriendEmail)
+    User.findOne({email: userEmail}).then(
+        doc => {
+            if (doc['friend_ids']) {
+                doc['friend_ids'] = doc['friend_ids'].filter(item => item !== deleteFriendEmail)
+            }
+            console.log("doc: " + JSON.stringify(doc));
+            doc.save();
+            response.send({deletedEmail: deleteFriendEmail});
+        },
+        err => {
+            console.log(err)
+        })
+});
 
 app.listen(port, () => {
     console.log(`App listening at localhost:${port}`);

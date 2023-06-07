@@ -5,27 +5,27 @@ const Schema = mongoose.Schema;
 
 const wishlistSchema = new Schema({
     _id: {
-      type: mongoose.ObjectId
+        type: mongoose.ObjectId
     },
     name: {
         type: String,
         required: true,
         unique: false
     },
-    fields: {
-        type: [String],
-        default: undefined
-    },
+    fields: [{
+        id: {type: String},
+        name: {type: String}
+    }],
     user: String
 })
 
-function modifyWishlistSchema(fields){
+function modifyWishlistSchema(fields) {
     console.log('modifyWishlistSchema' + JSON.stringify(fields))
     const content = new Schema({})
-    if(fields.length > 0) {
+    if (fields.length > 0) {
         let fieldsObj = {}
         fields.forEach((element => {
-            fieldsObj[element] = 'string'
+            fieldsObj[element.id] = 'string'
         }))
         content.add(fieldsObj)
         wishlistSchema.add({content: [content]})
